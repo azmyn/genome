@@ -1,4 +1,5 @@
 library(data.table)
+library(ggplot2)
 library(ggbiplot)
 library(tm)
 
@@ -6,7 +7,12 @@ library(tm)
 
 args = commandArgs(trailingOnly = TRUE) #引数受け取り 1つ目がmutation, 2つ目がclinical
 mut_dat = fread(args[1], stringsAsFactors = FALSE, encoding = "UTF-8")
-cli_dat = fread(args[2], stringsAsFactors = FALSE, encoding = "UTF-8")
+cli_dat = fread(
+  args[2],
+  stringsAsFactors = FALSE,
+  encoding = "UTF-8",
+  skip = 4
+)
 
 # 対応付け ---------------------------------------------------------------------
 
@@ -16,9 +22,9 @@ dat = cbind(mut_dat, data.frame(matrix(rep(NA, nrow(
 
 
 colnames(dat) = c("PATIENT_ID",
-                      "MUTATIONS",
-                      "AMOUNT_OF_MUTATIONS",
-                      "SMOKING_HISTORY")
+                  "MUTATIONS",
+                  "AMOUNT_OF_MUTATIONS",
+                  "SMOKING_HISTORY")
 
 for (i in 1:length(mut_dat$PATIENT_ID)) {
   for (j in 1:length(cli_dat$PATIENT_ID)) {
@@ -41,7 +47,7 @@ for (i in 1:length(mut_dat$PATIENT_ID)) {
         #            smoke == 3 || smoke == 4 || smoke == 5) {
         #   mut_dat[i] = "SMOKER"
       } else {
-        print("unexpected data")
+        dat$SMOKING_HISTORY[i] = NA
         
       }
     }
@@ -52,8 +58,8 @@ dat = na.omit(dat[, 1:4])
 
 # 頻度行列 --------------------------------------------------------------------
 
-corpus <- Corpus(VectorSource(dat$MUTATIONS))
-tdm <- TermDocumentMatrix(corpus)
+corpus = Corpus(VectorSource(dat$MUTATIONS))
+tdm = TermDocumentMatrix(corpus)
 D = as.matrix(tdm)
 rownames(D) = toupper(rownames(D))
 
@@ -61,7 +67,16 @@ rownames(D) = toupper(rownames(D))
 
 dpca = prcomp(t(D))
 
-file.name = sprintf("%s_biplot.png", args[1])    
+file.name = sprintf("%s_biplot.png", substr(args[1], 1, 4))
 png(file.name, width = 2000, height = 2000)
-print(ggbiplot(dpca, obs.scale = 1, var.scale = 1, groups = dat$SMOKING_HISTORY, ellipse = TRUE, circle = TRUE))
+print(
+  ggbiplot(
+    dpca,
+    obs.scale = 1,
+    var.scale = 1,
+    groups = dat$SMOKING_HISTORY,
+    ellipse = TRUE,
+    circle = TRUE
+  )
+)
 dev.off()
