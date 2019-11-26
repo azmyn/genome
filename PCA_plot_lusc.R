@@ -15,7 +15,7 @@ args = commandArgs(trailingOnly = TRUE) #引数受け取り 1つ目がmutation, 
 # )
 mut_dat = fread("/Users/azumi/Dropbox/KU/shimolab_2019/genome/lusc.mut_count.txt", stringsAsFactors = FALSE, encoding = "UTF-8")
 cli_dat = fread(
-  "/Users/azumi/Genome/lu_tcga/data_bcr_clinical_data_patient.txt",
+  "/Users/azumi/Genome/lusc_tcga/data_bcr_clinical_data_patient.txt",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   skip = 4
