@@ -118,7 +118,7 @@ for (i in 1:length(data$Tumor_Sample_Barcode)) {
 
 # 書き出し --------------------------------------------------------------------
 
-file.name = sprintf("%s_mut_count.txt", substr(args[2], 21, 24))
+file.name = sprintf("%s.mut_count.txt", substr(args[2], 21, 24))
 
 fwrite(sample_mut, file = file.name, row.names =
          F) # 一度書き出し
