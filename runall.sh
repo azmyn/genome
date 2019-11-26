@@ -1,4 +1,4 @@
-CANCER_TYPE = $1
+CANCER_TYPE=$1
 
 wget http://download.cbioportal.org/${CANCER_TYPE}_tcga.tar.gz -P /Users/azumi/Genome/
 mkdir -m 777 /Users/azumi/Genome/${CANCER_TYPE}_tcga
