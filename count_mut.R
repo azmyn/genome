@@ -13,7 +13,7 @@ args <- commandArgs(trailingOnly = TRUE) #引数受け取り
 #   encoding = "UTF-8"
 # )
 # clinical = fread(
-#   "/Users/azumi/Dropbox/KU/shimolab_2019/genome/luad_tcga/data_bcr_clinical_data_patient.txt",
+#   "/Users/azumi/Genome/hnsc_tcga/data_bcr_clinical_data_patient.txt",
 #   stringsAsFactors = FALSE,
 #   encoding = "UTF-8",
 #   skip = 4
@@ -28,7 +28,7 @@ clinical = fread(
 )
 # toc()
 
-
+print("データ読み込み完了")
 # mc3から該当する種類のデータの抽出 ------------------------------------------------------
 
 getid <- function(x) {
@@ -42,6 +42,7 @@ data = subset(mc3, barcode %in% clinical$PATIENT_ID)
 
 data = subset(data, data$Variant_Type %in% "SNP") #SNPのみ抽出
 
+print("該当データのみ抽出")
 # 変異数のカウント ----------------------------------------------------------------
 
 
@@ -93,20 +94,20 @@ for (i in 1:length(data$Tumor_Sample_Barcode)) {
     # }else if(data$Variant_Type[i] == "ONP"){
     #
     # }else if(data$Variant_Type[i] == "INS"||data$Variant_Type[i] == "DEL"||data$Variant_Type[i] == "ONP"||data$Variant_Type[i] == "TNP"||data$Variant_Type[i] == "DNP"){
-  } else if (data$Variant_Type[i] == "DNP") {
-    m = paste0("[",
-               data$Reference_Allele[i],
-               ">",
-               data$Tumor_Seq_Allele2[i] ,
-               "]")
-    
+  # } else if (data$Variant_Type[i] == "DNP") {
+  #   m = paste0("[",
+  #              data$Reference_Allele[i],
+  #              ">",
+  #              data$Tumor_Seq_Allele2[i] ,
+  #              "]")
+  #   
   } else{
-    
+    next
   }
   
   if (is.na(sample_mut[j, 1])) {
     sample_mut[j, 1] = as.character(substr(ID, 1, 12))
-    sample_mut[j, 2] = m
+    sample_mut[j, 2] = m  
     sample_mut[j, 3] = 1
   } else{
     sample_mut[j, 2] = paste(sample_mut[j, 2], m)
@@ -115,10 +116,10 @@ for (i in 1:length(data$Tumor_Sample_Barcode)) {
   
 }
 
-
+print("サンプルごとに集計完了")
 # 書き出し --------------------------------------------------------------------
 
-file.name = sprintf("%s.mut_count.txt", substr(args[2], 21, 24))
+file.name = sprintf("/Users/azumi/Dropbox/KU/shimolab_2019/genome/%s.mut_count.txt", substr(args[2], 21, 24))
 
 fwrite(sample_mut, file = file.name, row.names =
          F) # 一度書き出し
