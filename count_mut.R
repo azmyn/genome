@@ -6,14 +6,14 @@ library(tictoc)
 
 
 args <- commandArgs(trailingOnly = TRUE) #引数受け取り
-# tic()
+tic()
 # mc3 = fread(
 #   "/Users/azumi/Genome/mc3/mc3.v0.2.8.PUBLIC.maf.gz",
 #   stringsAsFactors = FALSE,
 #   encoding = "UTF-8"
 # )
 # clinical = fread(
-#   "/Users/azumi/Genome/hnsc_tcga/data_bcr_clinical_data_patient.txt",
+#   "/Users/azumi/Genome/laml_tcga/data_bcr_clinical_data_patient.txt",
 #   stringsAsFactors = FALSE,
 #   encoding = "UTF-8",
 #   skip = 4
@@ -26,7 +26,7 @@ clinical = fread(
   encoding = "UTF-8",
   skip = 4
 )
-# toc()
+toc()
 
 print("データ読み込み完了")
 # mc3から該当する種類のデータの抽出 ------------------------------------------------------
@@ -41,8 +41,8 @@ barcode = apply(as.matrix(mc3$Tumor_Sample_Barcode), 1, getid)
 data = subset(mc3, barcode %in% clinical$PATIENT_ID)
 
 data = subset(data, data$Variant_Type %in% "SNP") #SNPのみ抽出
-
-print("該当データのみ抽出")
+print(nrow(data))
+print("行の該当データのみ抽出")
 # 変異数のカウント ----------------------------------------------------------------
 
 
@@ -115,8 +115,8 @@ for (i in 1:length(data$Tumor_Sample_Barcode)) {
   }
   
 }
-
-print("サンプルごとに集計完了")
+print(nrow(sample_mut))
+print("個のサンプルごとに集計完了")
 # 書き出し --------------------------------------------------------------------
 
 file.name = sprintf("/Users/azumi/Dropbox/KU/shimolab_2019/genome/%s.mut_count.txt", substr(args[2], 21, 24))
