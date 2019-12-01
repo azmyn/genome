@@ -119,7 +119,7 @@ print(nrow(sample_mut))
 print("個のサンプルごとに集計完了")
 # 書き出し --------------------------------------------------------------------
 
-file.name = sprintf("/Users/azumi/Dropbox/KU/shimolab_2019/genome/%s.mut_count.txt", substr(args[2], 21, 24))
+file.name = sprintf("/Users/azumi/Dropbox/KU/shimolab_2019/genome/%s.mut_count.txt", substr(args[2], 21, 24)) #がんの略称が4文字じゃないと問題を起こすので注意
 
 fwrite(sample_mut, file = file.name, row.names =
          F) # 一度書き出し
