@@ -77,6 +77,6 @@ print(
     groups = dat$SMOKING_HISTORY,
     ellipse = TRUE,
     circle = TRUE
-  )
+  ) + ggtitle(toupper(substr(args[1], 1, 4)))
 )
 dev.off()
