@@ -13,19 +13,19 @@ mc3 = fread(
   encoding = "UTF-8"
 )
 clinical = fread(
-  "/Users/azumi/Genome/luad_tcga/data_bcr_clinical_data_patient.txt",
+  "/Users/azumi/Genome/lusc_tcga/data_bcr_clinical_data_patient.txt",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   skip = 4
 )
 
-mc3 = fread(args[1], stringsAsFactors = FALSE, encoding = "UTF-8")
-clinical = fread(
-  args[2],
-  stringsAsFactors = FALSE,
-  encoding = "UTF-8",
-  skip = 4
-)
+# mc3 = fread(args[1], stringsAsFactors = FALSE, encoding = "UTF-8")
+# clinical = fread(
+#   args[2],
+#   stringsAsFactors = FALSE,
+#   encoding = "UTF-8",
+#   skip = 4
+# )
 toc()
 
 print("データ読み込み完了")
@@ -37,9 +37,7 @@ getid <- function(x) {
 barcode = numeric(0)
 
 barcode = apply(as.matrix(mc3$Tumor_Sample_Barcode), 1, getid)
-
 data = subset(mc3, barcode %in% clinical$PATIENT_ID)
-
 data = subset(data, data$Variant_Type %in% "SNP") #SNPのみ抽出
 
 print(nrow(data))
@@ -52,7 +50,7 @@ data = subset(data, data$FILTER %in% "PASS")
 # 変異数のカウント ----------------------------------------------------------------
 
 
-sample_chrm_mut =  data.frame(matrix(rep(NA, 5), nrow = 1))[numeric(0),]
+sample_chrm_mut =  data.frame(matrix(rep(NA, 5), nrow = 1))[numeric(0), ]
 colnames(sample_chrm_mut) = c(
   "PATIENT_ID",
   "CHROMOSOME",
@@ -120,6 +118,22 @@ for (i in 1:nrow(data)) {
 toc()
 print(nrow(sample_chrm_mut))
 print("個のサンプルと染色体ごとに集計完了")
+
+
+# 変異のカウント(mutationのvariationを考慮しない )---------------------------------------
+nrow(mc3)
+
+sample_chrm_mut = data[, c(16, 5, 6)]
+sample_chrm_mut = cbind(sample_chrm_mut,  data.frame(matrix(
+  rep(1,  nrow(data)), nrow = nrow(data), ncol = 2
+)))
+colnames(sample_chrm_mut) = c(
+  "PATIENT_ID",
+  "CHROMOSOME",
+  "START_POSITION",
+  "MUTATIONS",
+  "AMOUNT_OF_SUBSTITUTIONS"
+)
 # 書き出し --------------------------------------------------------------------
 
 file.name = sprintf(
@@ -134,9 +148,9 @@ sample_chrm_mut = fread("/Users/azumi/Dropbox/KU/shimolab_2019/genome/luad.chrm_
 # 1Mbごとに切り分け --------------------------------------------------------------
 
 sorted = sample_chrm_mut[with(sample_chrm_mut,
-                              order(PATIENT_ID, CHROMOSOME, START_POSITION)), ]
+                              order(PATIENT_ID, CHROMOSOME, START_POSITION)),]
 
-mut_1Mb = data.frame(matrix(rep(NA, 5), nrow = 1))[numeric(0),]
+mut_1Mb = data.frame(matrix(rep(NA, 5), nrow = 1))[numeric(0), ]
 colnames(mut_1Mb) = c("PATIENT_ID",
                       "CHROMOSOME",
                       "POSITION",
@@ -157,7 +171,7 @@ for (i in 1:nrow(sorted[, 1])) {
     mut_1Mb[j, 3] = pos
     mut_1Mb[j, 4] = sorted[i, 4]
     mut_1Mb[j, 5] = 1
-  } else if(i == 1){
+  } else if (i == 1) {
     mut_1Mb[j, 1] = sorted[i, 1]
     mut_1Mb[j, 2] = sorted[i, 2]
     mut_1Mb[j, 3] = pos
@@ -177,9 +191,9 @@ for (i in 1:nrow(sorted[, 1])) {
 }
 toc()
 
-
-print(nrow(sample_mut))
+print(nrow(mut_1Mb))
 print("個のサンプルごとに集計完了")
 
+file.name = "lusc.mut_1Mb_count.txt"
 fwrite(mut_1Mb, file = file.name, row.names =
          F) # 一度書き出し
