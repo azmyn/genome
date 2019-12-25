@@ -9,29 +9,28 @@ library(ggbiplot)
 # データ読み込み -----------------------------------------------------------------
 
 
-# args <- commandArgs(trailingOnly = TRUE) #引数受け取り
-tic()
-data1 = fread(
-  "/Users/azumi/Genome/luad.mut_1Mb_count.txt",
-  stringsAsFactors = FALSE,
-  encoding = "UTF-8"
-)
-
-data2 = fread(
-  "/Users/azumi/Genome/lihc.mut_1Mb_count.txt",
-  stringsAsFactors = FALSE,
-  encoding = "UTF-8"
-)
-
-
-# mc3 = fread(args[1], stringsAsFactors = FALSE, encoding = "UTF-8")
-# clinical = fread(
-#   args[2],
+args <- commandArgs(trailingOnly = TRUE) #引数受け取り
+# data1 = fread(
+#   "/Users/azumi/Genome/tgct.mut_1Mb_count.txt",
 #   stringsAsFactors = FALSE,
-#   encoding = "UTF-8",
-#   skip = 4
+#   encoding = "UTF-8"
 # )
-toc()
+# 
+# data2 = fread(
+#   "/Users/azumi/Genome/thca.mut_1Mb_count.txt",
+#   stringsAsFactors = FALSE,
+#   encoding = "UTF-8"
+# )
+file1 = sprintf("/Users/azumi/Genome/%s.mut_1Mb_count.txt", args[1])
+file2 = sprintf("/Users/azumi/Genome/%s.mut_1Mb_count.txt", args[2])
+
+data1 = fread(file1,
+              stringsAsFactors = FALSE,
+              encoding = "UTF-8")
+
+data2 = fread(file2,
+              stringsAsFactors = FALSE,
+              encoding = "UTF-8")
 
 print("データ読み込み完了")
 
@@ -67,7 +66,7 @@ chrmlen = c(
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
 
 
-mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0),]
+mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0), ]
 ID =  data1$PATIENT_ID[1]
 j = 1
 calc = function(x, y) {
@@ -105,7 +104,7 @@ mat1 = mat
 # 行列作成2 -------------------------------------------------------------------
 
 
-mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0),]
+mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0), ]
 ID =  data2$PATIENT_ID[1]
 j = 1
 calc = function(x, y) {
@@ -142,40 +141,62 @@ mat2 = mat
 
 # 単語行列 ------------------------------------------------------------------
 
+
 mat = rbindlist(list(mat1, mat2))
-# mat2 = cbind(mat,as.data.table(c(rep("LUAD", nrow(mat1)),rep("LUSC",nrow(mat2)))) )
-
+cname = NULL
+for (i in 1:length(chrmlen_1Mb)) {
+  if (i == 23) {
+    c = 'X'
+  } else if (i == 24) {
+    c = 'Y'
+  } else{
+    c = i
+  }
+  for (j in 1:chrmlen_1Mb[i]) {
+    n = sprintf("%s-%s", c, as.character(j))
+    cname = c(cname, as.vector(n)) 
+  }
+}
+colnames(mat) = cname
 # tSNE --------------------------------------------------------------------
-D = as.matrix(mat)
-tic()
-tsne = Rtsne(
-  D,
-  check_duplicates = FALSE,
-  verbose = TRUE,
-  initial_dims = 3126
-)
-toc()
-
-tic()
-png("~/Genome/luad_and_lihc.1Mb_tsne.png",
-    width = 2000,
-    height = 2000,
-    )
-colors = c(rep("2", nrow(mat1)),rep("3",nrow(mat2)))
-
-plot(tsne$Y, t = 'n', main = "Rtsne")
-text(tsne$Y, labels = as.character(as.factor(row.names(mat))),col = colors)
-dev.off()
-toc()
+# D = as.matrix(mat)
+# tic()
+# tsne = Rtsne(
+#   D,
+#   check_duplicates = FALSE,
+#   verbose = TRUE,
+#   initial_dims = 3126
+# )
+# toc()
+#
+# tic()
+# png("~/Genome/luad_and_lihc.1Mb_tsne.png",
+#     width = 2000,
+#     height = 2000,
+#     )
+# colors = c(rep("2", nrow(mat1)),rep("3",nrow(mat2)))
+#
+# plot(tsne$Y, t = 'n', main = "Rtsne")
+# text(tsne$Y, labels = as.character(as.factor(row.names(mat))),col = colors)
+# dev.off()
+# toc()
 
 
 # PCA ---------------------------------------------------------------------
 df = as.data.frame(mat)
-df_f <- df[,apply(df, 2, var, na.rm=TRUE) != 0]
+df_f <- df[, apply(df, 2, var, na.rm = TRUE) != 0]
 
 # biplot(x=dpca)
 dpca = prcomp(df_f)
-png("~/Genome/luad_and_lihc.1Mb_PCA.png",
+# file.name = sprintf("/Users/azumi/Genome/%s_and_%s.1Mb_PCA2.png", "TGCT", "THCA")
+# title = sprintf("%s(red) and %s(green)", "TGCT", "THCA")
+
+file.name = sprintf("/Users/azumi/Genome/%s_and_%s.1Mb_PCA.png", args[1], args[2])
+title = sprintf("%s(red) and %s(green)", toupper(args[1]), toupper(args[2]))
+
+colors = c(rep("2", nrow(mat1)), rep("3", nrow(mat2)))
+
+png(file.name,
     width = 2000,
     height = 2000)
 print(
@@ -186,6 +207,6 @@ print(
     groups = colors,
     ellipse = TRUE,
     circle = TRUE
-  ) + ggtitle("LUAD(red) and LIHC(green)")
+  ) + ggtitle(title)
 )
 dev.off()
