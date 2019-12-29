@@ -3,12 +3,19 @@ library(tictoc)
 library(ggbiplot)
 library(rpca)
 
+# mat = fread(
+#   "matrix.csv",
+#   stringsAsFactors = FALSE,
+#   encoding = "UTF-8",
+#   sep = ","
+# )
 mat = fread(
-  "matrix.csv",
+  "matrix_6types.csv",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   sep = ","
 )
+
 labels = fread(
   "matrix_labels.csv",
   stringsAsFactors = FALSE,
@@ -19,7 +26,7 @@ labels = fread(
 label = labels[,1]
 type = labels[,2]
 
-
+type = labels$type
 # 行列(確率ベクトルバージョン) ---------------------------------------------------------
 
 sum = apply(mat, 1, sum)
@@ -27,33 +34,34 @@ prob <- function(x) {
   return(x / sum(x))
 }
 mat2 = as.matrix (mat)
-mat_prob = matrix(rep(0, sum(chrmlen_1Mb) * nrow(mat2)), nrow = nrow(mat2))
+mat_prob = matrix(rep(0, ncol(mat2) * nrow(mat2)), nrow = nrow(mat2))
 for (i in 1:nrow(mat)) {
   for (j in 1:ncol(mat)) {
     mat_prob[i, j] = mat2[i, j] / sum[i]
   }
 }
-colnames(mat_prob) = cname
+# colnames(mat_prob) = cname
 
 # PCA ---------------------------------------------------------------------
 
-# df = as.data.frame(mat)
+df = as.data.frame(mat)
 df = as.data.frame(mat_prob)
 df_f <- df[, apply(df, 2, var, na.rm = TRUE) != 0]
 
 
-df_f2 = df_f[c(-1288,-1763),]
-dpca = prcomp(df_f2)
+df_f2 = df_f[c(-679,-1119,-1314),]
 tic()
-dpca = robpca(df_f,k=2)
+dpca = prcomp(df_f)
+
+# dpca = robpca(df_f,k=2)
 toc()
 # biplot(x=dpca)
 
 # file.name = sprintf("/Users/azumi/Genome/%s_and_%s.1Mb_PCA.png", args[1], args[2])
 # title = sprintf("%s(red) and %s(green)", toupper(args[1]), toupper(args[2]))
 
-file.name = "alldata_prob_screened2.png"
-title = "All 25 cancer"
+file.name = "alldata_6type_prob.png"
+title = "All 25 cancer(変異別ベクトルにしたもの)"
 
 png(file.name,
     width = 2000,
@@ -63,10 +71,10 @@ print(
     dpca,
     obs.scale = 1,
     var.scale = 1,
-    groups = type[c(-1288,-1763)],
+    groups = type,
     ellipse = TRUE,
     circle = TRUE,
-    color = type[c(-1288,-1763)],
+    color = type,
   )
   + ggtitle(title)
 )
@@ -105,3 +113,34 @@ print(
   + ggtitle(title)
 )
 dev.off()
+
+
+# robust PCA --------------------------------------------------------------
+df = as.data.frame(mat)
+df_f = df[, apply(df, 2, var, na.rm = TRUE) != 0]
+
+
+tic()
+spca = spherePCA(df_f, ncomp = NULL, rotate = NULL)
+toc()
+file.name = "all_data_prob_robust.png"
+title = "all data robust PCA"
+
+png(file.name,
+    width = 2000,
+    height = 2000)
+print(
+  ggbiplot(
+    spca,
+    obs.scale = 1,
+    var.scale = 1,
+    groups = label,
+    ellipse = TRUE,
+    circle = TRUE,
+    color = label
+  )
+  + ggtitle(title)
+)
+dev.off()
+
+k
