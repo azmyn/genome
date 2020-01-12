@@ -15,6 +15,12 @@ mat = fread(
   encoding = "UTF-8",
   sep = ","
 )
+mat = fread(
+  "matrix_6types.csv",
+  stringsAsFactors = FALSE,
+  encoding = "UTF-8",
+  sep = ","
+)
 labels = fread(
   "matrix_labels.csv",
   stringsAsFactors = FALSE,
@@ -53,7 +59,7 @@ toc()
 
 
 tic()
-png("~/Genome/tsne_alldata.png",
+png("~/Genome/tsne_alldata_6type.png",
     width = 2000,
     height = 2000,
     )
@@ -116,15 +122,17 @@ colPal3 <- colorRampPalette(brewer.pal(11, "Spectral"))
 cp3 = colPal3(25)
 #おしまい
 
-png("~/Genome/tsne_alldata_prob.png",
+png("~/Genome/tsne_alldata_6type_prob.png",
     width = 2000,
     height = 2000,
 )
 plot(tsne$Y, t = 'n', main = "Rtsne 頻度行列")
-legend("bottomleft", legend = s , col = cp3 ,pch = c(1:25)%/%6+15)
-# text(tsne$Y, labels = as.character(as.factor(label)),col = type)
-points(tsne$Y,col = cp3[type_num], pch = (type_num%/%6)+15 )
-dev.off()
+# legend("bottomleft", legend = s , col = cp3 ,pch = c(1:25)%/%6+15)
+# # text(tsne$Y, labels = as.character(as.factor(label)),col = type)
+# points(tsne$Y,col = cp3[type_num], pch = (type_num%/%6)+15 )
 
-# sort(unique(type))
-     
+legend("bottomleft", legend = sort(unique(type)), col = c(1:25),pch = c(1:25)%/%6+15)
+# text(tsne$Y, labels = as.character(as.factor(label)),col = type)
+points(tsne$Y,col = type_num, pch = (type_num%/%6)+15)
+
+dev.off()
