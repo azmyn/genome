@@ -23,26 +23,20 @@ labels = fread(
 )
 
 x1 = fread(
-  "matrix.csv",
+  "PCAWG_matrix.csv",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   sep = ","
 )
-
-label = as.vector(as.matrix(labels[, 1]))
-type = as.vector(as.matrix(labels[, 2]))
 
 gene = read.table("TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
                   sep = "", 
                   header = TRUE
                   )
 
-mut_data = fread(
-  "mutation.csv",
-  stringsAsFactors = FALSE,
-  encoding = "UTF-8",
-  sep = ","
-)
+label = as.vector(as.matrix(labels[, 1]))
+type = as.vector(as.matrix(labels[, 2]))
+barcode = as.vector(as.matrix(labels[, 3]))
 
 # 距離行列 --------------------------------------------------------------------
 
@@ -55,9 +49,6 @@ for (i in 1:1933) {
               sum(mat[i, c(12509:15635)]),
               sum(mat[i, c(15636:18762)]))
 }
-
-w1 = 0.5
-w2 = 0.5
 
 x1 = as.matrix(x1)
 tic()
@@ -79,11 +70,28 @@ toc()
 
 
 # geneの行列作成 ---------------------------------------------------------------
-x3 = as.matrix(gene)
-
-nrow(gene)
-gene[,7]
-
+gene = as.matrix(gene)
+x3 <- matrix(0, length(barcode), length(table(gene[,7])))
+colnames(x3)=sort(unique(gene[,7]))
+sorted =sort(unique(gene[,7]))
+j=1
+for (i in 1:length(barcode)) {
+  sub = subset(gene,gene[,1] %in% barcode[i])
+  if(nrow(sub) != 0){
+    for (j in 1:nrow(sub)) {
+      n = match(sub[j,7],sorted)
+      x3[i,n] = x3[i,n]+1 
+    }
+    
+  }
+}
+X2 <- x3 %*% t(x3)
+d3 <- matrix(0, 1933, 1933)
+for (i1 in 1:1933) {
+  for (i2 in 1:1933) {
+    d3[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+  }
+}
 
 # tSNE --------------------------------------------------------------------
 toPoint = function(factors) { 

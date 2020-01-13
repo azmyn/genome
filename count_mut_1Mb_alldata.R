@@ -2,11 +2,7 @@ library(data.table)
 library(tictoc)
 
 # データ読み込み -----------------------------------------------------------------
-
-
-# args <- commandArgs(trailingOnly = TRUE) #引数受け取り
 tic()
-# data = fread("/Users/azumi/Genome/final_consensus_passonly.snv_mnv_indel.icgc.public.maf.gz", stringsAsFactors = FALSE, encoding = "UTF-8")
 data = fread(
   "/Users/azumi/Genome/f_c_p_screened.csv",
   stringsAsFactors = FALSE,
@@ -14,16 +10,11 @@ data = fread(
   sep = ","
 )
 toc()
-
-print("データ読み込み完了")
-
-dat = data[1:20000, ]
 # 変異数のカウント ----------------------------------------------------------------
 
-sample_chrm_mut =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
-sample_chrm_mut_type =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
-sample_chrm_mut_pos =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
-
+sample_chrm_mut =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
+sample_chrm_mut_type =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
+sample_chrm_mut_pos =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
 comp <- function(x) {
   #変異を揃える
   x = toupper(x)
@@ -58,15 +49,15 @@ for (i in 1:nrow(data)) {
 print(nrow(sample_chrm_mut))
 print("個のサンプルと染色体ごとに集計完了")
 
-c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos)
+c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos, )
 colnames(c) = c("Mutations", "Mut_type", "Pos_1Mb")
 
 toc() #だいたい10000秒ぐらい
 
-d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 4, 11:15)]
+d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 4, 9, 11:16)]
 fwrite(d, file = "mutation_small.csv", row.names = F) # 一度書き出し
 
-# 行列作成 --------------------------------------------------------------------
+# 行列作成(書き換えが必要) --------------------------------------------------------------------
 
 chrmlen = c(
   248956422,
@@ -97,10 +88,10 @@ chrmlen = c(
 )
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
 
-mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0),]
-ID =  d$Donor_ID[1]
+mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0), ]
+ID =  d$Tumor_Sample_Barcode[1]
 j = 1
-label = sprintf("%s_%s", d$Project_Code[1], d$Donor_ID[1])
+label = sprintf("%s_%s", d$Project_Code[1], d$Tumor_Sample_Barcode[1])
 type = d$Project_Code[1]
 
 calc = function(x, y) {
@@ -120,12 +111,14 @@ calc = function(x, y) {
 tic()
 
 for (i in 1:nrow(d)) {
-  newID = d$Donor_ID[i]
+  newID = d$Tumor_Sample_Barcode[i]
   if (newID != ID) {
     j = j + 1
     ID = newID
-    label = c(label, sprintf("%s_%s", d$Project_Code[i], d$Donor_ID[i]))
+    label = c(label,
+              sprintf("%s_%s", d$Project_Code[i], d$Tumor_Sample_Barcode[i]))
     type = c(type, d$Project_Code[i])
+    barcode = c(barcode, d$Tumor_Sample_Barcode[i])
   }
   c = calc(d$Chromosome[i], d$Pos_1Mb[i])
   if (is.na(mat[j, c])) {
@@ -154,15 +147,14 @@ for (i in 1:length(chrmlen_1Mb)) {
 colnames(mat) = cname
 # rownames(mat) = label
 fwrite(mat, file = "matrix.csv", row.names = F) # 一度書き出し
-fwrite(as.data.table(cbind(label, type)), file = "matrix_labels.csv", row.names = F) # 一度書き出し
+fwrite(as.data.table(cbind(label, type, barcode)), file = "matrix_labels.csv", row.names = F)
+toc() #11000秒ぐらい
 
-# 変異別行列作成 -----------------------------------------------------------------
+# 変異別行列作成(超遅いので不要) -----------------------------------------------------------------
 
-mat_mut = data.frame(matrix(rep(0, sum(chrmlen_1Mb) * 6), nrow = 1))[numeric(0),]
-ID =  d$Donor_ID[1]
+mat_mut = data.frame(matrix(rep(0, sum(chrmlen_1Mb) * 6), nrow = 1))[numeric(0), ]
+ID = d$Tumor_Sample_Barcode[1]
 j = 1
-label = sprintf("%s_%s", d$Project_Code[1], d$Donor_ID[1])
-type = d$Project_Code[1]
 
 calc = function(x, y, z) {
   if (z == "C>A") {
@@ -196,12 +188,10 @@ calc = function(x, y, z) {
 tic()
 
 for (i in 1:nrow(d)) {
-  newID = d$Donor_ID[i]
+  newID = d$Tumor_Sample_Barcode[i]
   if (newID != ID) {
     j = j + 1
     ID = newID
-    label = c(label, sprintf("%s_%s", d$Project_Code[i], d$Donor_ID[i]))
-    type = c(type, d$Project_Code[i])
   }
   c = calc(d$Chromosome[i], d$Pos_1Mb[i], d$Mut_type[i])
   if (is.na(mat_mut[j, c])) {
@@ -212,4 +202,48 @@ for (i in 1:nrow(d)) {
 }
 
 mat_mut[is.na(mat_mut)] <- 0
-toc()
+fwrite(mat_mut, file = "PCAWG_matrix_6type.csv", row.names = F) # 一度書き出し
+toc() #72000秒ぐらい
+
+
+# 変異別を書き直したぶん -----------------------------------------------------------------
+
+mutation = c("C>A","C>G","C>T","T>A","T>C","T>G")
+
+calc = function(x, y) {
+  if (x == 'X') {
+    x = 23
+  }
+  if (x == 'Y') {
+    x = 24
+  }
+  if (x == 1) {
+    return(y + 1)
+  } else{
+    x = as.numeric(x)
+    return (sum(chrmlen_1Mb[1:(x - 1)]) + y + 1)
+  }
+}
+d = as.matrix(d)
+for (i in 1:6) {
+  mat_mut = matrix(0,length(barcode),sum(chrmlen_1Mb))
+  tic(i)
+  d_s = subset(d,d[,7] == mutation[i])
+  for (j in 1:length(barcode)) {
+    d_s_b = subset(d_s,d_s[,3]==barcode[j])
+    for (k in 1:nrow(d_s_b)) {
+      c = calc(d_s_b[k,1], d_s_b[k,8])
+      if (is.na(mat_mut[j, c])) {
+        mat_mut[j, c] = 1
+      } else{
+        mat_mut[j, c] = mat_mut[j, c] + 1
+      }
+    }
+  }
+  filename = sprintf("PCAWG_matrix_6type_part%s.csv",i)
+  assign(paste("mat_mut_", i, sep=""), mat_mut)
+  fwrite(mat_mut, filename, row.names = F)
+  toc(log=TRUE)
+}
+mat_all = cbind(mat_mut_1,mat_mut_2,mat_mut_3,mat_mut_4,mat_mut_5,mat_mut_6)
+fwrite(mat_all,"PCAWG_matrix_6type.csv",row.names = F)
