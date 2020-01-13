@@ -23,16 +23,17 @@ labels = fread(
 )
 
 x1 = fread(
-  "PCAWG_matrix.csv",
+  "PCAWG_matrix_position.csv",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   sep = ","
 )
 
-gene = read.table("TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
-                  sep = "", 
-                  header = TRUE
-                  )
+gene = read.table(
+  "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
+  sep = "",
+  header = TRUE
+)
 
 label = as.vector(as.matrix(labels[, 1]))
 type = as.vector(as.matrix(labels[, 2]))
@@ -71,16 +72,16 @@ toc()
 
 # geneの行列作成 ---------------------------------------------------------------
 gene = as.matrix(gene)
-x3 <- matrix(0, length(barcode), length(table(gene[,7])))
-colnames(x3)=sort(unique(gene[,7]))
-sorted =sort(unique(gene[,7]))
-j=1
+x3 <- matrix(0, length(barcode), length(table(gene[, 7])))
+colnames(x3) = sort(unique(gene[, 7]))
+sorted = sort(unique(gene[, 7]))
+j = 1
 for (i in 1:length(barcode)) {
-  sub = subset(gene,gene[,1] %in% barcode[i])
-  if(nrow(sub) != 0){
+  sub = subset(gene, gene[, 1] %in% barcode[i])
+  if (nrow(sub) != 0) {
     for (j in 1:nrow(sub)) {
-      n = match(sub[j,7],sorted)
-      x3[i,n] = x3[i,n]+1 
+      n = match(sub[j, 7], sorted)
+      x3[i, n] = x3[i, n] + 1
     }
     
   }
@@ -94,40 +95,45 @@ for (i1 in 1:1933) {
 }
 
 # tSNE --------------------------------------------------------------------
-toPoint = function(factors) { 
-  mapping <- c ("Biliary-AdenoCA"= 1,
-                "Bone-Cart"= 2,
-                "Bone-Epith"= 3,
-                "Bone-Osteosarc"= 4,
-                "Breast-AdenoCa"= 5,
-                "Breast-DCIS"= 6,
-                "Breast-LobularCa"= 7,
-                "CNS-Medullo"= 8,
-                "CNS-PiloAstro"= 9,
-                "Eso-AdenoCa"= 10,
-                "Head-SCC"= 11,
-                "Kidney-RCC"= 12,
-                "Liver-HCC"= 13,
-                "Lymph-BNHL"= 14,
-                "Lymph-CLL"= 15,
-                "Lymph-NOS"= 16,
-                "Myeloid-AML"= 17,
-                "Myeloid-MDS"= 18,
-                "Myeloid-MPN"= 19,
-                "Ovary-AdenoCA"= 20,
-                "Panc-AdenoCA"= 21,
-                "Panc-Endocrine"= 22,
-                "Prost-AdenoCA"= 23,
-                "Skin-Melanoma"= 24,
-                "Stomach-AdenoCA"= 25)
+toPoint = function(factors) {
+  mapping <- c (
+    "Biliary-AdenoCA" = 1,
+    "Bone-Cart" = 2,
+    "Bone-Epith" = 3,
+    "Bone-Osteosarc" = 4,
+    "Breast-AdenoCa" = 5,
+    "Breast-DCIS" = 6,
+    "Breast-LobularCa" = 7,
+    "CNS-Medullo" = 8,
+    "CNS-PiloAstro" = 9,
+    "Eso-AdenoCa" = 10,
+    "Head-SCC" = 11,
+    "Kidney-RCC" = 12,
+    "Liver-HCC" = 13,
+    "Lymph-BNHL" = 14,
+    "Lymph-CLL" = 15,
+    "Lymph-NOS" = 16,
+    "Myeloid-AML" = 17,
+    "Myeloid-MDS" = 18,
+    "Myeloid-MPN" = 19,
+    "Ovary-AdenoCA" = 20,
+    "Panc-AdenoCA" = 21,
+    "Panc-Endocrine" = 22,
+    "Prost-AdenoCA" = 23,
+    "Skin-Melanoma" = 24,
+    "Stomach-AdenoCA" = 25
+  )
   mapping[as.character(factors)]
 }
-type_num = as.integer(unlist(lapply(type,toPoint)))
+type_num = as.integer(unlist(lapply(type, toPoint)))
 
-w1 = c(1, 0.75, 0.5, 0.25, 0)
-w2 = c(0, 0.25, 0.5, 0.75, 1)
-for (i in 1:5) {
-  D = w1[i] * d1 + w2[i] * d2
+# w1 = c(1, 0.75, 0.5, 0.25, 0)
+# w2 = c(0, 0.25, 0.5, 0.75, 1)
+w1 = c(1, 0, 0, 1/3)
+w2 = c(0, 1, 0, 1/3)
+w3 = c(0, 0, 1, 1/3)
+for (i in 1:4) {
+  D = w1[i] * d1 + w2[i] * d2 + w3[i] * d3
   tic()
   tsne = Rtsne(
     D,
@@ -137,8 +143,11 @@ for (i in 1:5) {
     is_distance = TRUE
   )
   toc()
-  file = sprintf("~/Genome/tsne_2matrix_w1_%s_w2_%s.png", w1[i], w2[i])
-  title = sprintf("tsne_2matrix_w1_%s_w2_%s.png", w1[i], w2[i])
+  file = sprintf("~/Genome/tsne_2matrix_w1_%s_w2_%s_w3_%s.png",
+                 w1[i],
+                 w2[i],
+                 w3[i])
+  title = sprintf("tsne_2matrix_w1_%s_w2_%s_w3_%s.png", w1[i], w2[i], w3[i])
   png(file,
       width = 2000,
       height = 2000,)
@@ -155,6 +164,3 @@ for (i in 1:5) {
   points(tsne$Y, col = type_num, pch = type_num)
   dev.off()
 }
-
-
-
