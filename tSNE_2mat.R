@@ -6,15 +6,8 @@ library(ggplot2)
 library(RColorBrewer) #カラーパレット
 library(dplyr)
 
-
 # データのロード ---------------------------------------------------------------------
 
-mat = fread(
-  "PCAWG_matrix_6type.csv",
-  stringsAsFactors = FALSE,
-  encoding = "UTF-8",
-  sep = ","
-)
 labels = fread(
   "PCAWG_matrix_labels.csv",
   stringsAsFactors = FALSE,
@@ -28,6 +21,13 @@ x1 = fread(
   encoding = "UTF-8",
   sep = ","
 )
+x2 = fread(
+  "PCAWG_matrix_type.csv",
+  stringsAsFactors = FALSE,
+  encoding = "UTF-8",
+  sep = ","
+)
+
 
 gene = read.table(
   "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
@@ -41,34 +41,23 @@ barcode = as.vector(as.matrix(labels[, 3]))
 
 # 距離行列 --------------------------------------------------------------------
 
-x2 = matrix(rep(0, sum(nrow(mat)) * 6), nrow = nrow(mat))
-for (i in 1:1933) {
-  x2[i, ] = c(sum(mat[i, c(1:3127)]),
-              sum(mat[i, c(3128:6254)]),
-              sum(mat[i, c(6255:9381)]),
-              sum(mat[i, c(9382:12508)]),
-              sum(mat[i, c(12509:15635)]),
-              sum(mat[i, c(15636:18762)]))
-}
-
 x1 = as.matrix(x1)
-tic()
 X2 <- x1 %*% t(x1)
-d1 <- matrix(0, 1933, 1933)
-for (i1 in 1:1933) {
-  for (i2 in 1:1933) {
-    d1[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+d1 <- matrix(0, length(barcode), length(barcode))
+for (i1 in 1:length(barcode)) {
+  for (i2 in 1:length(barcode)) {
+    # d1[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+    d1[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
 X2 <- x2 %*% t(x2)
-d2 <- matrix(0, 1933, 1933)
-for (i1 in 1:1933) {
-  for (i2 in 1:1933) {
-    d2[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+d2 <- matrix(0, length(barcode), length(barcode))
+for (i1 in 1:length(barcode)) {
+  for (i2 in 1:length(barcode)) {
+    # d2[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+    d2[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
-toc()
-
 
 # geneの行列作成 ---------------------------------------------------------------
 gene = as.matrix(gene)
@@ -87,10 +76,11 @@ for (i in 1:length(barcode)) {
   }
 }
 X2 <- x3 %*% t(x3)
-d3 <- matrix(0, 1933, 1933)
-for (i1 in 1:1933) {
-  for (i2 in 1:1933) {
-    d3[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+d3 <- matrix(0, length(barcode), length(barcode))
+for (i1 in 1:length(barcode)) {
+  for (i2 in 1:length(barcode)) {
+    # d3[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
+    d3[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
 
@@ -126,15 +116,43 @@ toPoint = function(factors) {
   mapping[as.character(factors)]
 }
 type_num = as.integer(unlist(lapply(type, toPoint)))
+toShape = function(factors) {
+  mapping <- c (
+    "Biliary-AdenoCA" = 0,
+    "Bone-Cart" = 1,
+    "Bone-Epith" = 1,
+    "Bone-Osteosarc" = 1,
+    "Breast-AdenoCa" = 2,
+    "Breast-DCIS" = 2,
+    "Breast-LobularCa" = 2,
+    "CNS-Medullo" = 3,
+    "CNS-PiloAstro" = 3,
+    "Eso-AdenoCa" = 4,
+    "Head-SCC" = 5,
+    "Kidney-RCC" = 6,
+    "Liver-HCC" = 7,
+    "Lymph-BNHL" = 8,
+    "Lymph-CLL" = 8,
+    "Lymph-NOS" = 8,
+    "Myeloid-AML" = 9,
+    "Myeloid-MDS" = 9,
+    "Myeloid-MPN" = 9,
+    "Ovary-AdenoCA" = 10,
+    "Panc-AdenoCA" = 11,
+    "Panc-Endocrine" = 11,
+    "Prost-AdenoCA" = 12,
+    "Skin-Melanoma" = 13,
+    "Stomach-AdenoCA" = 14
+  )
+  mapping[as.character(factors)]
+}
+shape_num = as.integer(unlist(lapply(type, toShape)))
 
-# w1 = c(1, 0.75, 0.5, 0.25, 0)
-# w2 = c(0, 0.25, 0.5, 0.75, 1)
-w1 = c(1, 0, 0, 1/3)
-w2 = c(0, 1, 0, 1/3)
-w3 = c(0, 0, 1, 1/3)
-for (i in 1:4) {
+w1 = c(1, 0, 0, 0.5, 0.5, 0, 1 / 3)
+w2 = c(0, 1, 0, 0.5, 0, 0.5, 1 / 3)
+w3 = c(0, 0, 1, 0, 0.5, 0.5, 1 / 3)
+for (i in 1:length(w1)) {
   D = w1[i] * d1 + w2[i] * d2 + w3[i] * d3
-  tic()
   tsne = Rtsne(
     D,
     check_duplicates = FALSE,
@@ -142,25 +160,50 @@ for (i in 1:4) {
     initial_dims = nrow(D),
     is_distance = TRUE
   )
-  toc()
-  file = sprintf("~/Genome/tsne_2matrix_w1_%s_w2_%s_w3_%s.png",
+  file = sprintf("~/Genome/3matrix/tsne_3matrix_w1_%s_w2_%s_w3_%seuc.png",
                  w1[i],
                  w2[i],
                  w3[i])
-  title = sprintf("tsne_2matrix_w1_%s_w2_%s_w3_%s.png", w1[i], w2[i], w3[i])
-  png(file,
-      width = 2000,
-      height = 2000,)
-  plot(tsne$Y, t = 'n', main = title)
-  # legend("bottomleft", legend = sort(unique(type)), col = c(1:25),pch = c(1:25)%/%6+15)
-  legend(
-    "bottomleft",
-    legend = sort(unique(type)),
-    col = c(1:25),
-    pch = c(1:25)
-  )
-  # text(tsne$Y, labels = as.character(as.factor(label)),col = type)
-  # points(tsne$Y,col = type_num, pch = (type_num%/%6)+15)
-  points(tsne$Y, col = type_num, pch = type_num)
-  dev.off()
+  title = sprintf("tsne_3matrix_w1_%s_w2_%s_w3_%s", w1[i], w2[i], w3[i])
+  df <- data.frame(matrix(rep(NA, 3), nrow=1950))[numeric(0), ]
+  df = as.data.frame(cbind(as.factor(type),tsne$Y[,1] ,tsne$Y[,2]))
+  df[,1] = as.factor(type)
+  df[,4] = as.factor(shape_num)
+  colnames(df) <- c("gene_type", "tSNE_1", "tSNE_2","pch")
+  g <- ggplot(df,aes(x=df$tSNE_1,y=df$tSNE_2,color = df$gene_type,shape=df$pch))+
+    geom_point()+
+    # scale_color_manual(values = c("#FFE600","#E5D64C","#DAB24F","#D28A53","#BF331A","#CB6856","#B83344","#C35866","#AF2B62","#B94E8A","#8F1F6A","#AE679A","#783388","#6A5195","#545A8E","#3B5595","#6892BD","#006EA5","#54A2BD","#6BBFBF","#239F82","#2CA538","#82BF61","#93B11D","#D9D950"))
+    scale_color_manual(name = "cancer detail type",
+                       labels = sort(unique(type)),
+                       # values = c("#EDAD0B","#F1BB91","#ECA092","#E38FA7","#DF89B9","#D48BBC","#C697D1","#E2C8E8","#B4A2D2","#ADB1D4","#9DAED7","#8CB4DB","#7CBEDF","#99CFE6","#79C3DB","#97D3E3","#77D6D6","#75D2BC","#72CFA5","#7DD685","#A6DE85","#D4E591","#E4EE8F","#F7F78F","#FFF48E"))+
+                       values = c("#F5D174","#F3C0AB","#E07987","#D45D87","#E7A5C9","#CF8CBB","#BB9CD2","#AEC1E3","#5FAFD7","#75D4C9","#8DDA81","#CADF77","#F5D174","#F3C0AB","#E07987","#D45D87","#E7A5C9","#CF8CBB","#BB9CD2","#AEC1E3","#5FAFD7","#75D4C9","#8DDA81","#CADF77","#DA5019"))+
+    scale_shape_manual(name = "cancer type",
+                       labels = c("Biliary","Bone","Breast","CNS","Eso","Head","Kidney","Liver","Lymph","Myeloid","Ovary","Panc","Prost","Skin","Stomach"),
+                       values = c(0:14)
+    )+
+    labs(x = "tSNE_1",y="tSNE_2")+
+    ggtitle(title)
+  ggsave(file=file, plot = g, dpi = 500, width = 16, height = 9)
 }
+
+
+
+# 古いプロット ------------------------------------------------------------------
+
+
+png(file,
+    width = 1000,
+    height = 1000, )
+plot(tsne$Y, t = 'n', main = title)
+# legend("bottomleft", legend = sort(unique(type)), col = c(1:25),pch = c(1:25)%/%6+15)
+legend(
+  "bottomleft",
+  legend = sort(unique(type)),
+  col = c(1:25),
+  pch = c(1:25)
+)
+# text(tsne$Y, labels = as.character(as.factor(label)),col = type)
+# points(tsne$Y,col = type_num, pch = (type_num%/%6)+15)
+points(tsne$Y, col = type_num, pch = type_num)
+dev.off()
+

@@ -87,13 +87,12 @@ chrmlen = c(
   58227415
 )
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
-
-mat = data.frame(matrix(rep(0, sum(chrmlen_1Mb)), nrow = 1))[numeric(0), ]
-ID =  d$Tumor_Sample_Barcode[1]
-j = 1
-label = sprintf("%s_%s", d$Project_Code[1], d$Tumor_Sample_Barcode[1])
-type = d$Project_Code[1]
-
+TSB = unique(d$Tumor_Sample_Barcode)
+mat = data.frame(matrix(rep(NA, sum(chrmlen_1Mb)*length(TSB)), ncol = sum(chrmlen_1Mb) ,nrow = length(TSB)))
+label = unique(mutate(d, label = paste(Project_Code ,Tumor_Sample_Barcode,sep="_")) [,9])
+TSB = unique(d$Tumor_Sample_Barcode)
+type = c()
+Donor_ID = c()
 calc = function(x, y) {
   if (x == 'X') {
     x = 23
@@ -108,26 +107,21 @@ calc = function(x, y) {
     return (sum(chrmlen_1Mb[1:(x - 1)]) + y + 1)
   }
 }
-tic()
 
-for (i in 1:nrow(d)) {
-  newID = d$Tumor_Sample_Barcode[i]
-  if (newID != ID) {
-    j = j + 1
-    ID = newID
-    label = c(label,
-              sprintf("%s_%s", d$Project_Code[i], d$Tumor_Sample_Barcode[i]))
-    type = c(type, d$Project_Code[i])
-    barcode = c(barcode, d$Tumor_Sample_Barcode[i])
-  }
-  c = calc(d$Chromosome[i], d$Pos_1Mb[i])
-  if (is.na(mat[j, c])) {
-    mat[j, c] = 1
-  } else{
-    mat[j, c] = mat[j, c] + 1
+tic()
+for (i in 1:length(TSB)) {
+  sub = filter(d, Tumor_Sample_Barcode == TSB[i]) 
+  type = c(type, sub$Project_Code[1])
+  Donor_ID = c(Donor_ID, sub$Donor_ID[1])
+  for (j in 1:nrow(sub)) {
+    c = calc(sub$Chromosome[j], sub$Pos_1Mb[j])
+    if (is.na(mat[i, c])) {
+      mat[i, c] = 1
+    } else{
+      mat[i, c] = mat[i, c] + 1
+    }
   }
 }
-
 mat[is.na(mat)] <- 0
 
 cname = NULL
@@ -147,64 +141,9 @@ for (i in 1:length(chrmlen_1Mb)) {
 colnames(mat) = cname
 # rownames(mat) = label
 fwrite(mat, file = "matrix.csv", row.names = F) # 一度書き出し
-fwrite(as.data.table(cbind(label, type, barcode)), file = "matrix_labels.csv", row.names = F)
-toc() #11000秒ぐらい
+fwrite(as.data.table(cbind(label, type, TSB,Donor_ID)), file = "matrix_labels.csv", row.names = F)
 
-# 変異別行列作成(超遅いので不要) -----------------------------------------------------------------
-
-mat_mut = data.frame(matrix(rep(0, sum(chrmlen_1Mb) * 6), nrow = 1))[numeric(0), ]
-ID = d$Tumor_Sample_Barcode[1]
-j = 1
-
-calc = function(x, y, z) {
-  if (z == "C>A") {
-    mut = 1
-  } else if (z == "C>G") {
-    mut = 2
-  } else if (z == "C>T") {
-    mut = 3
-  } else if (z == "T>A") {
-    mut = 4
-  } else if (z == "T>C") {
-    mut = 5
-  } else if (z == "T>G") {
-    mut = 6
-  } else{
-    stop("error")
-  }
-  if (x == 'X') {
-    x = 23
-  }
-  if (x == 'Y') {
-    x = 24
-  }
-  if (x == 1) {
-    return((mut - 1) * sum(chrmlen_1Mb) + y + 1)
-  } else{
-    x = as.numeric(x)
-    return ((mut - 1) * sum(chrmlen_1Mb) + sum(chrmlen_1Mb[1:(x - 1)]) + y + 1)
-  }
-}
-tic()
-
-for (i in 1:nrow(d)) {
-  newID = d$Tumor_Sample_Barcode[i]
-  if (newID != ID) {
-    j = j + 1
-    ID = newID
-  }
-  c = calc(d$Chromosome[i], d$Pos_1Mb[i], d$Mut_type[i])
-  if (is.na(mat_mut[j, c])) {
-    mat_mut[j, c] = 1
-  } else{
-    mat_mut[j, c] = mat_mut[j, c] + 1
-  }
-}
-
-mat_mut[is.na(mat_mut)] <- 0
-fwrite(mat_mut, file = "PCAWG_matrix_6type.csv", row.names = F) # 一度書き出し
-toc() #72000秒ぐらい
-
+toc() #10000秒ぐらい
 
 # 変異別を書き直したぶん -----------------------------------------------------------------
 
@@ -247,3 +186,14 @@ for (i in 1:6) {
 }
 mat_all = cbind(mat_mut_1,mat_mut_2,mat_mut_3,mat_mut_4,mat_mut_5,mat_mut_6)
 fwrite(mat_all,"PCAWG_matrix_6type.csv",row.names = F)
+
+x2 = matrix(rep(0, sum(nrow(mat)) * 6), nrow = nrow(mat))
+for (i in 1:length(barcode)) {
+  x2[i,] = c(sum(mat_all[i, c(1:3127)]),
+             sum(mat_all[i, c(3128:6254)]),
+             sum(mat_all[i, c(6255:9381)]),
+             sum(mat_all[i, c(9382:12508)]),
+             sum(mat_all[i, c(12509:15635)]),
+             sum(mat_all[i, c(15636:18762)]))
+}
+fwrite(x2,"PCAWG_matrix_type.csv",row.names = F)
