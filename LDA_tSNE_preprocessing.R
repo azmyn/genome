@@ -29,6 +29,7 @@ gene = read.table(
 label = as.vector(as.matrix(labels[, 1]))
 type = as.vector(as.matrix(labels[, 2]))
 barcode = as.vector(as.matrix(labels[, 3]))
+donor = as.vector(as.matrix(labels[, 4]))
 
 # geneの行列作成 ---------------------------------------------------------------
 

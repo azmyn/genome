@@ -12,9 +12,9 @@ data = fread(
 toc()
 # 変異数のカウント ----------------------------------------------------------------
 
-sample_chrm_mut =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
-sample_chrm_mut_type =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
-sample_chrm_mut_pos =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0), ]
+sample_chrm_mut =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
+sample_chrm_mut_type =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
+sample_chrm_mut_pos =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
 comp <- function(x) {
   #変異を揃える
   x = toupper(x)
@@ -49,7 +49,7 @@ for (i in 1:nrow(data)) {
 print(nrow(sample_chrm_mut))
 print("個のサンプルと染色体ごとに集計完了")
 
-c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos, )
+c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos,)
 colnames(c) = c("Mutations", "Mut_type", "Pos_1Mb")
 
 toc() #だいたい10000秒ぐらい
@@ -88,8 +88,13 @@ chrmlen = c(
 )
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
 TSB = unique(d$Tumor_Sample_Barcode)
-mat = data.frame(matrix(rep(NA, sum(chrmlen_1Mb)*length(TSB)), ncol = sum(chrmlen_1Mb) ,nrow = length(TSB)))
-label = unique(mutate(d, label = paste(Project_Code ,Tumor_Sample_Barcode,sep="_")) [,9])
+mat = data.frame(matrix(
+  rep(NA, sum(chrmlen_1Mb) * length(TSB)),
+  ncol = sum(chrmlen_1Mb) ,
+  nrow = length(TSB)
+))
+label = unique(mutate(d, label = paste(Project_Code , Tumor_Sample_Barcode, sep =
+                                         "_")) [, 9])
 TSB = unique(d$Tumor_Sample_Barcode)
 type = c()
 Donor_ID = c()
@@ -110,7 +115,7 @@ calc = function(x, y) {
 
 tic()
 for (i in 1:length(TSB)) {
-  sub = filter(d, Tumor_Sample_Barcode == TSB[i]) 
+  sub = filter(d, Tumor_Sample_Barcode == TSB[i])
   type = c(type, sub$Project_Code[1])
   Donor_ID = c(Donor_ID, sub$Donor_ID[1])
   for (j in 1:nrow(sub)) {
@@ -139,15 +144,14 @@ for (i in 1:length(chrmlen_1Mb)) {
   }
 }
 colnames(mat) = cname
-# rownames(mat) = label
 fwrite(mat, file = "matrix.csv", row.names = F) # 一度書き出し
-fwrite(as.data.table(cbind(label, type, TSB,Donor_ID)), file = "matrix_labels.csv", row.names = F)
+fwrite(as.data.table(cbind(label, type, TSB, Donor_ID)), file = "matrix_labels.csv", row.names = F)
 
 toc() #10000秒ぐらい
 
 # 変異別を書き直したぶん -----------------------------------------------------------------
 
-mutation = c("C>A","C>G","C>T","T>A","T>C","T>G")
+mutation = c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
 
 calc = function(x, y) {
   if (x == 'X') {
@@ -165,13 +169,13 @@ calc = function(x, y) {
 }
 d = as.matrix(d)
 for (i in 1:6) {
-  mat_mut = matrix(0,length(barcode),sum(chrmlen_1Mb))
+  mat_mut = matrix(0, length(barcode), sum(chrmlen_1Mb))
   tic(i)
-  d_s = subset(d,d[,7] == mutation[i])
+  d_s = subset(d, d[, 7] == mutation[i])
   for (j in 1:length(barcode)) {
-    d_s_b = subset(d_s,d_s[,3]==barcode[j])
+    d_s_b = subset(d_s, d_s[, 3] == barcode[j])
     for (k in 1:nrow(d_s_b)) {
-      c = calc(d_s_b[k,1], d_s_b[k,8])
+      c = calc(d_s_b[k, 1], d_s_b[k, 8])
       if (is.na(mat_mut[j, c])) {
         mat_mut[j, c] = 1
       } else{
@@ -179,21 +183,28 @@ for (i in 1:6) {
       }
     }
   }
-  filename = sprintf("PCAWG_matrix_6type_part%s.csv",i)
-  assign(paste("mat_mut_", i, sep=""), mat_mut)
+  filename = sprintf("PCAWG_matrix_6type_part%s.csv", i)
+  assign(paste("mat_mut_", i, sep = ""), mat_mut)
   fwrite(mat_mut, filename, row.names = F)
-  toc(log=TRUE)
+  toc(log = TRUE)
 }
-mat_all = cbind(mat_mut_1,mat_mut_2,mat_mut_3,mat_mut_4,mat_mut_5,mat_mut_6)
-fwrite(mat_all,"PCAWG_matrix_6type.csv",row.names = F)
+mat_all = cbind(mat_mut_1,
+                mat_mut_2,
+                mat_mut_3,
+                mat_mut_4,
+                mat_mut_5,
+                mat_mut_6)
+fwrite(mat_all, "PCAWG_matrix_6type.csv", row.names = F)
 
 x2 = matrix(rep(0, sum(nrow(mat)) * 6), nrow = nrow(mat))
 for (i in 1:length(barcode)) {
-  x2[i,] = c(sum(mat_all[i, c(1:3127)]),
-             sum(mat_all[i, c(3128:6254)]),
-             sum(mat_all[i, c(6255:9381)]),
-             sum(mat_all[i, c(9382:12508)]),
-             sum(mat_all[i, c(12509:15635)]),
-             sum(mat_all[i, c(15636:18762)]))
+  x2[i, ] = c(
+    sum(mat_all[i, c(1:3127)]),
+    sum(mat_all[i, c(3128:6254)]),
+    sum(mat_all[i, c(6255:9381)]),
+    sum(mat_all[i, c(9382:12508)]),
+    sum(mat_all[i, c(12509:15635)]),
+    sum(mat_all[i, c(15636:18762)])
+  )
 }
-fwrite(x2,"PCAWG_matrix_type.csv",row.names = F)
+fwrite(x2, "PCAWG_matrix_type.csv", row.names = F)
