@@ -6,7 +6,6 @@ library(lda)
 library(dplyr)
 library(Rtsne)
 library(ggplot2)
-# library(RColorBrewer)#カラーパレット
 library(tidytext)
 library(stringr)
 library(openxlsx)
@@ -288,6 +287,7 @@ for (i in 1:length(w1)) {
     )
     file = sprintf("~/Genome/LDA_tSNE/smoking/smoking_perp_%s_w1_%s_w2_%s_w3_%s.png",
                    # perp[j],
+                   perp,
                    signif(w1[i], digits = 3),
                    signif(w2[i], digits = 3),
                    signif(w3[i], digits = 3)
