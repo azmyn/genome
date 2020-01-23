@@ -1,12 +1,11 @@
 library(data.table)
 library(tictoc)
-library(umap)
 library(Rtsne)
 library(ggplot2)
-library(RColorBrewer) #カラーパレット
 library(dplyr)
 
 # データのロード ---------------------------------------------------------------------
+setwd("~/Genome/PCAWG")
 
 labels = fread(
   "PCAWG_matrix_labels.csv",
@@ -28,7 +27,6 @@ x2 = fread(
   sep = ","
 )
 
-
 gene = read.table(
   "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
   sep = "",
@@ -46,15 +44,14 @@ X2 <- x1 %*% t(x1)
 d1 <- matrix(0, length(barcode), length(barcode))
 for (i1 in 1:length(barcode)) {
   for (i2 in 1:length(barcode)) {
-    # d1[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
     d1[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
+x2 = as.matrix(x2)
 X2 <- x2 %*% t(x2)
 d2 <- matrix(0, length(barcode), length(barcode))
 for (i1 in 1:length(barcode)) {
   for (i2 in 1:length(barcode)) {
-    # d2[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
     d2[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
@@ -79,7 +76,6 @@ X2 <- x3 %*% t(x3)
 d3 <- matrix(0, length(barcode), length(barcode))
 for (i1 in 1:length(barcode)) {
   for (i2 in 1:length(barcode)) {
-    # d3[i1, i2] <- X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2]
     d3[i1, i2] <- sqrt(X2[i1, i1] - 2 * X2[i1, i2] + X2[i2, i2])
   }
 }
@@ -151,59 +147,106 @@ shape_num = as.integer(unlist(lapply(type, toShape)))
 w1 = c(1, 0, 0, 0.5, 0.5, 0, 1 / 3)
 w2 = c(0, 1, 0, 0.5, 0, 0.5, 1 / 3)
 w3 = c(0, 0, 1, 0, 0.5, 0.5, 1 / 3)
+perp = seq(5, 50, by = 5)
 for (i in 1:length(w1)) {
-  D = w1[i] * d1 + w2[i] * d2 + w3[i] * d3
-  tsne = Rtsne(
-    D,
-    check_duplicates = FALSE,
-    verbose = TRUE,
-    initial_dims = nrow(D),
-    is_distance = TRUE
-  )
-  file = sprintf("~/Genome/3matrix/tsne_3matrix_w1_%s_w2_%s_w3_%seuc.png",
-                 w1[i],
-                 w2[i],
-                 w3[i])
-  title = sprintf("tsne_3matrix_w1_%s_w2_%s_w3_%s", w1[i], w2[i], w3[i])
-  df <- data.frame(matrix(rep(NA, 3), nrow=1950))[numeric(0), ]
-  df = as.data.frame(cbind(as.factor(type),tsne$Y[,1] ,tsne$Y[,2]))
-  df[,1] = as.factor(type)
-  df[,4] = as.factor(shape_num)
-  colnames(df) <- c("gene_type", "tSNE_1", "tSNE_2","pch")
-  g <- ggplot(df,aes(x=df$tSNE_1,y=df$tSNE_2,color = df$gene_type,shape=df$pch))+
-    geom_point()+
-    # scale_color_manual(values = c("#FFE600","#E5D64C","#DAB24F","#D28A53","#BF331A","#CB6856","#B83344","#C35866","#AF2B62","#B94E8A","#8F1F6A","#AE679A","#783388","#6A5195","#545A8E","#3B5595","#6892BD","#006EA5","#54A2BD","#6BBFBF","#239F82","#2CA538","#82BF61","#93B11D","#D9D950"))
-    scale_color_manual(name = "cancer detail type",
-                       labels = sort(unique(type)),
-                       # values = c("#EDAD0B","#F1BB91","#ECA092","#E38FA7","#DF89B9","#D48BBC","#C697D1","#E2C8E8","#B4A2D2","#ADB1D4","#9DAED7","#8CB4DB","#7CBEDF","#99CFE6","#79C3DB","#97D3E3","#77D6D6","#75D2BC","#72CFA5","#7DD685","#A6DE85","#D4E591","#E4EE8F","#F7F78F","#FFF48E"))+
-                       values = c("#F5D174","#F3C0AB","#E07987","#D45D87","#E7A5C9","#CF8CBB","#BB9CD2","#AEC1E3","#5FAFD7","#75D4C9","#8DDA81","#CADF77","#F5D174","#F3C0AB","#E07987","#D45D87","#E7A5C9","#CF8CBB","#BB9CD2","#AEC1E3","#5FAFD7","#75D4C9","#8DDA81","#CADF77","#DA5019"))+
-    scale_shape_manual(name = "cancer type",
-                       labels = c("Biliary","Bone","Breast","CNS","Eso","Head","Kidney","Liver","Lymph","Myeloid","Ovary","Panc","Prost","Skin","Stomach"),
-                       values = c(0:14)
-    )+
-    labs(x = "tSNE_1",y="tSNE_2")+
-    ggtitle(title)
-  ggsave(file=file, plot = g, dpi = 500, width = 16, height = 9)
+  for (j in 1:length(perp)) {
+    D = w1[i] * d1 + w2[i] * d2 + w3[i] * d3
+    tsne = Rtsne(
+      D,
+      check_duplicates = FALSE,
+      verbose = TRUE,
+      initial_dims = nrow(D),
+      is_distance = TRUE,
+      perplexity = perp[j]
+    )
+    file = sprintf(
+      "~/Genome/3matrix/tsne_3matrix_perp_%s_w1_%s_w2_%s_w3_%s.png",
+      perp[j],
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
+    )
+    title = sprintf(
+      "3matrix perp=%s w1=%s w2=%s w3=%s",
+      perp[j],
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
+    )
+    df <- data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0),]
+    df = as.data.frame(cbind(as.factor(type), tsne$Y[, 1] , tsne$Y[, 2]))
+    df[, 1] = as.factor(type)
+    df[, 4] = as.factor(shape_num)
+    colnames(df) <- c("gene_type", "tSNE_1", "tSNE_2", "pch")
+    g <-
+      ggplot(df,
+             aes(
+               x = df$tSNE_1,
+               y = df$tSNE_2,
+               color = df$gene_type,
+               shape = df$pch
+             )) +
+      geom_point() +
+      scale_color_manual(
+        name = "Cancer detail types",
+        labels = sort(unique(type)),
+        values = c(
+          "#F5D174",
+          "#F3C0AB",
+          "#E07987",
+          "#D45D87",
+          "#E7A5C9",
+          "#CF8CBB",
+          "#BB9CD2",
+          "#AEC1E3",
+          "#5FAFD7",
+          "#75D4C9",
+          "#8DDA81",
+          "#CADF77",
+          "#F5D174",
+          "#F3C0AB",
+          "#E07987",
+          "#D45D87",
+          "#E7A5C9",
+          "#CF8CBB",
+          "#BB9CD2",
+          "#AEC1E3",
+          "#5FAFD7",
+          "#75D4C9",
+          "#8DDA81",
+          "#CADF77",
+          "#DA5019"
+        )
+      ) +
+      scale_shape_manual(
+        name = "Cancer types",
+        labels = c(
+          "Biliary",
+          "Bone",
+          "Breast",
+          "CNS",
+          "Eso",
+          "Head",
+          "Kidney",
+          "Liver",
+          "Lymph",
+          "Myeloid",
+          "Ovary",
+          "Panc",
+          "Prost",
+          "Skin",
+          "Stomach"
+        ),
+        values = c(0:14)
+      ) +
+      labs(x = "tSNE_1", y = "tSNE_2") +
+      ggtitle(title)
+    ggsave(
+      file = file,
+      plot = g,
+      dpi = 500,
+      width = 16,
+      height = 9
+    )
+  }
 }
-
-
-
-# 古いプロット ------------------------------------------------------------------
-
-
-png(file,
-    width = 1000,
-    height = 1000, )
-plot(tsne$Y, t = 'n', main = title)
-# legend("bottomleft", legend = sort(unique(type)), col = c(1:25),pch = c(1:25)%/%6+15)
-legend(
-  "bottomleft",
-  legend = sort(unique(type)),
-  col = c(1:25),
-  pch = c(1:25)
-)
-# text(tsne$Y, labels = as.character(as.factor(label)),col = type)
-# points(tsne$Y,col = type_num, pch = (type_num%/%6)+15)
-points(tsne$Y, col = type_num, pch = type_num)
-dev.off()
-
