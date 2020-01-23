@@ -12,7 +12,7 @@ codes for master thesis
 # 動かす前にやること
 
 1. https://dcc.icgc.org/releases/PCAWG/consensus_snv_indel から final_consensus_passonly.snv_mnv_indel.icgc.public.maf.gz" をダウンロードする.
-2. https://dcc.icgc.org/releases/PCAWG/driver_mutations から "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv.gz" をダウンロードし解凍る.
+2. https://dcc.icgc.org/releases/PCAWG/driver_mutations から "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv.gz" をダウンロードし解凍する.
 3. https://dcc.icgc.org/releases/PCAWG/clinical_and_histology から "pcawg_donor_clinical_August2016_v9.xlsx" をダウンロードする.
 
 # 動かす順番
