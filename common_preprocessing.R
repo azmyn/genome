@@ -145,7 +145,7 @@ for (i in 1:length(chrmlen_1Mb)) {
 }
 colnames(mat) = cname
 fwrite(mat, file = "matrix.csv", row.names = F) # 一度書き出し
-fwrite(as.data.table(cbind(label, type, TSB, Donor_ID)), file = "matrix_labels.csv", row.names = F)
+fwrite(as.data.table(cbind(label, type, TSB, Donor_ID)), file = "PCAWG_matrix_labels.csv", row.names = F)
 
 toc() #10000秒ぐらい
 
