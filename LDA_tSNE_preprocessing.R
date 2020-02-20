@@ -53,7 +53,7 @@ d2 = mutate(d2, NewCol = paste(!!!rlang::syms(c(
   "Chromosome", "Pos_1Mb"
 )), sep = "_"))
 
-sent = matrix(NA, length(barcode), 3)
+sent = matrix(NA, length(barcode), 4)
 tic()
 for (i in 1:length(barcode)) {
   sub = filter(d2, Tumor_Sample_Barcode ==  barcode[i])
@@ -68,7 +68,13 @@ for (i in 1:length(barcode)) {
     } else{
       sent[i, 2] = paste(sent[i, 2], as.character(sub[j, 7]))
     }
+    if (is.na(sent[i, 4])) {
+      sent[i, 4] = as.character(sub[j, 6])
+    } else{
+      sent[i, 4] = paste(sent[i, 4], as.character(sub[j, 6]))
+    }
   }
+  
   for (k in 1:ncol(x3)) {
     if (x3[i, k] != 0) {
       if (is.na(sent[i, 3])) {
@@ -90,6 +96,8 @@ sent = as.matrix(sent)
 position_lex = lexicalize(sent[, 1], lower = FALSE)
 type_lex = lexicalize(sent[, 2], lower = FALSE)
 gene_lex = lexicalize(sent[, 3], lower = FALSE)
+type96_lex = lexicalize(sent[, 4], lower = FALSE)
+
 tic()
 topic = 50
 topic_gene = 30
@@ -121,16 +129,25 @@ gene_result <-
     0.1,
     compute.log.likelihood = TRUE
   )
+type96_result <-
+  lda.collapsed.gibbs.sampler(type96_lex$documents,
+                              topic,
+                              type96_lex$vocab,
+                              100,
+                              0.1,
+                              0.1,
+                              compute.log.likelihood = TRUE)
 toc()
 
 pos_vec = matrix(NA, length(label), topic)
 type_vec = matrix(NA, length(label), topic)
 gene_vec = matrix(NA, length(label), topic_gene)
-
+type96_vec = matrix(NA, length(label), topic)
 for (i in 1:length(label)) {
   for (j in 1:topic) {
     pos_vec[i, j] = pos_result$document_sums[j, i] / sum(pos_result$document_sums[, i])
     type_vec[i, j] = type_result$document_sums[j, i] / sum(type_result$document_sums[, i])
+    type96_vec[i, j] = type96_result$document_sums[j, i] / sum(type96_result$document_sums[, i])
   }
   for (j in 1:topic_gene) {
     if (sum(gene_result$document_sums[, i]) == 0) {
@@ -143,3 +160,4 @@ for (i in 1:length(label)) {
 fwrite(pos_vec, "position_lda_vector.csv", row.names = F)
 fwrite(type_vec, "type_lda_vector.csv", row.names = F)
 fwrite(gene_vec, "gene_lda_vector.csv", row.names = F)
+fwrite(type96_vec, "type96_lda_vector.csv", row.names = F)

@@ -2,7 +2,7 @@ import csv
 import pandas as pd
 
 # write
-path_w = '/Users/azumi/Dropbox/KU/shimolab_2019/genome/f_c_p_screened.csv''
+path_w = '/Users/azumi/Dropbox/KU/shimolab_2019/genome/f_c_p_screened.csv'
 
 
 # read and exract SNP

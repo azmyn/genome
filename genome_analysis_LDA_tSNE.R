@@ -19,8 +19,14 @@ pos_vec = fread(
   encoding = "UTF-8",
   sep = ","
 )
+# type_vec = fread(
+#   "type_lda_vector.csv",
+#   stringsAsFactors = FALSE,
+#   encoding = "UTF-8",
+#   sep = ","
+# )
 type_vec = fread(
-  "type_lda_vector.csv",
+  "type96_lda_vector.csv",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   sep = ","
@@ -155,13 +161,14 @@ for (i in 1:length(w1)) {
       signif(w2[i], digits = 3),
       signif(w3[i], digits = 3)
     )
-    title = sprintf("LDA tSNE perplexity=%s w1=%s w2=%s w3=%s",
-                    perp[j],
-                    signif(w1[i], digits = 3),
-                    signif(w2[i], digits = 3),
-                    signif(w3[i], digits = 3)
-                    )
-    df <- data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0),]
+    title = sprintf(
+      "LDA tSNE perplexity=%s w1=%s w2=%s w3=%s",
+      perp[j],
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
+    )
+    df <- data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0), ]
     df = as.data.frame(cbind(as.factor(type), tsne$Y[, 1] , tsne$Y[, 2]))
     df[, 1] = as.factor(type)
     df[, 4] = as.factor(shape_num)
@@ -228,7 +235,8 @@ for (i in 1:length(w1)) {
         values = c(0:14)
       ) +
       labs(x = "tSNE_1", y = "tSNE_2") +
-      ggtitle(title)
+      ggtitle(title) 
+    # + theme(legend.position = 'none')
     ggsave(
       file = file,
       plot = g,
@@ -285,20 +293,22 @@ for (i in 1:length(w1)) {
       initial_dims = nrow(D),
       is_distance = TRUE,
     )
-    file = sprintf("~/Genome/LDA_tSNE/smoking/smoking_perp_%s_w1_%s_w2_%s_w3_%s.png",
-                   # perp[j],
-                   perp,
-                   signif(w1[i], digits = 3),
-                   signif(w2[i], digits = 3),
-                   signif(w3[i], digits = 3)
-                   )
-    title = sprintf("Smoking history w1=%s w2=%s w3=%s",
-                    # perp[j],
-                    signif(w1[i], digits = 3),
-                    signif(w2[i], digits = 3),
-                    signif(w3[i], digits = 3)
-                    )
-    df = data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0),]
+    file = sprintf(
+      "~/Genome/LDA_tSNE/old/smoking_perp_%s_w1_%s_w2_%s_w3_%s.png",
+      # perp[j],
+      perp,
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
+    )
+    title = sprintf(
+      "Smoking history w1=%s w2=%s w3=%s",
+      # perp[j],
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
+    )
+    df = data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0), ]
     df = as.data.frame(cbind(as.factor(class), tsne$Y[comp, 1] , tsne$Y[comp, 2]))
     df[, 1] = as.factor(class)
     df[, 4] = as.factor(class_num)
@@ -365,21 +375,23 @@ for (i in 1:length(w1)) {
       is_distance = TRUE,
       perplexity = perp[j],
     )
-    file = sprintf("~/Genome/LDA_tSNE/alcohol/alcohol_perp_%s_w1_%s_w2_%s_w3_%s.png",
-                   # perp[j],
-                   perp,
-                   signif(w1[i], digits = 3),
-                   signif(w2[i], digits = 3),
-                   signif(w3[i], digits = 3)
+    file = sprintf(
+      "~/Genome/LDA_tSNE/alcohol/alcohol_perp_%s_w1_%s_w2_%s_w3_%s.png",
+      # perp[j],
+      perp,
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
     )
-    title = sprintf("Alcohol history w1=%s w2=%s w3=%s",
-                    # perp[j],
-                    perp,
-                    signif(w1[i], digits = 3),
-                    signif(w2[i], digits = 3),
-                    signif(w3[i], digits = 3)
+    title = sprintf(
+      "Alcohol history w1=%s w2=%s w3=%s",
+      # perp[j],
+      # perp,
+      signif(w1[i], digits = 3),
+      signif(w2[i], digits = 3),
+      signif(w3[i], digits = 3)
     )
-    df <- data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0),]
+    df <- data.frame(matrix(rep(NA, 3), nrow = 1950))[numeric(0), ]
     df = as.data.frame(cbind(as.factor(class), tsne$Y[comp, 1] , tsne$Y[comp, 2]))
     df[, 1] = as.factor(class)
     df[, 4] = as.factor(class_num)

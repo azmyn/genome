@@ -1,5 +1,6 @@
 library(data.table)
 library(tictoc)
+library(dplyr)
 
 # データ読み込み -----------------------------------------------------------------
 tic()
@@ -12,9 +13,10 @@ data = fread(
 toc()
 # 変異数のカウント ----------------------------------------------------------------
 
-sample_chrm_mut =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
-sample_chrm_mut_type =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
-sample_chrm_mut_pos =  data.frame(matrix(rep(NA, 1), nrow = 1))[numeric(0),]
+sample_chrm_mut = c()
+sample_chrm_mut_type = c()
+sample_chrm_mut_pos = c()
+
 comp <- function(x) {
   #変異を揃える
   x = toupper(x)
@@ -49,12 +51,12 @@ for (i in 1:nrow(data)) {
 print(nrow(sample_chrm_mut))
 print("個のサンプルと染色体ごとに集計完了")
 
-c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos,)
+c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos)
 colnames(c) = c("Mutations", "Mut_type", "Pos_1Mb")
 
 toc() #だいたい10000秒ぐらい
 
-d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 4, 9, 11:16)]
+d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 4, 9, 11:15)] 
 fwrite(d, file = "mutation_small.csv", row.names = F) # 一度書き出し
 
 # 行列作成(書き換えが必要) --------------------------------------------------------------------
@@ -208,3 +210,35 @@ for (i in 1:length(barcode)) {
   )
 }
 fwrite(x2, "PCAWG_matrix_type.csv", row.names = F)
+
+
+# 文脈を含めた96パターン ------------------------------------------------------------
+
+mutation = c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
+nu = c("A","C","G","T")
+mutation96 =c()
+for(i in 1:6){
+  for (j in 1:4) {
+    for (k in 1:4) {
+      mutation96 = c(mutation96,paste0(nu[j],"[",mutation[i],"]",nu[k]))
+    }
+  }
+}
+mat_96 =  data.frame(matrix(rep(NA, 1), nrow = 1,ncol=96))[numeric(0),]
+
+d = as.data.frame(d)
+tic()
+for (i in 1:length(TSB)) {
+  sub = filter(d, d$Tumor_Sample_Barcode == TSB[i])
+    for (j in 1:nrow(sub)) {
+      c = match(sub$Mutations[j],mutation96)
+      if (is.na(mat_96[i, c])) {
+        mat_96[i, c] = 1
+      } else{
+        mat_96[i, c] = mat_96[i, c] + 1
+      }
+  }
+}
+mat_96[is.na(mat_96)] <- 0
+toc()
+fwrite(mat_96, "PCAWG_matrix_context_96type.csv", row.names = F)
