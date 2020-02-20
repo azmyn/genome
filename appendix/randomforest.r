@@ -1,3 +1,5 @@
+library(data.table)
+library(tictoc)
 # ロード ---------------------------------------------------------------------
 setwd("~/Genome/PCAWG")
 
@@ -8,7 +10,7 @@ pos_vec = fread(
   sep = ","
 )
 type_vec = fread(
-  "type_lda_vector.csv",
+  "type96_lda_vector.csv",
   stringsAsFactors = FALSE,
   encoding = "UTF-8",
   sep = ","
@@ -26,13 +28,6 @@ labels = fread(
   sep = ","
 )
 
-gene = read.table(
-  "TableS3_panorama_driver_mutations_ICGC_samples.public.tsv",
-  sep = "",
-  header = TRUE
-)
-
-clinical_data_base = read.xlsx("pcawg_donor_clinical_August2016_v9.xlsx")
 
 label = as.vector(as.matrix(labels[, 1]))
 type = as.vector(as.matrix(labels[, 2]))
@@ -60,7 +55,28 @@ tic()
 gene_distRF = RFdist(geneRF, mtry1=3, no.trees, no.forests, addcl1=T,addcl2=F,imp=T, oob.prox1=T)
 toc()
 
+tic()
+no.clusters = 2
 pos_labelRF = pamNew(pos_distRF$cl1, no.clusters)
+toc()
+tic()
+pos_labelEuclid = pamNew(dist(as.data.frame(posRF)), no.clusters)
+toc()
+tic()
+type_labelRF = pamNew(type_distRF$cl1, no.clusters)
+toc()
+tic()
+type_labelEuclid = pamNew(dist(as.data.frame(typeRF)), no.clusters)
+toc()
+tic()
+gene_labelRF = pamNew(gene_distRF$cl1, no.clusters)
+toc()
+tic()
+gene_labelEuclid = pamNew(dist(as.data.frame(geneRF)), no.clusters)
+toc()
+
+
+table(pos_labelRF)
 
 no.clusters = 2
 labelRF = pamNew(distRF$cl1, no.clusters)
@@ -79,7 +95,7 @@ plot(fit1, conf.int=F,col= unique(labelNew), lty=1:4, xlab="Time to death ",ylab
 # 以下テストデータ ----------------------------------------------------------------
 
 
-setwd("~/Dropbox/KU/shimolab_2019/genome/")
+setwd("~/Dropbox/KU/shimolab_2019/genome/appendix")
 source("FunctionsRFclustering.txt")
 ## read in the data set
 ## This is the data set we used in the technical report Shi and Horvath (2005)
@@ -108,13 +124,13 @@ labelEuclid = pamNew(dist(datRF), no.clusters)
 ## Due to the randomness of RF procedure, the exact distance measure will vary a bit
 ## Therefore, we also include our RF clustering result in our data
 ##If you want to see our result, you may need to add the following statement
-#labelRF = dat1$labelRF
+labelRF = dat1$labelRF
 ## Check the agreement between RF cluster and Euclidean distance cluster
 fisher.test(table(labelRF, labelEuclid)) ## Fisher’s exact p value
-Selected Output
-Fishers Exact Test for Count Data
-data: table(labelRF, labelEuclid)
-p-value = 1.216e-15
+# Selected Output
+# Fishers Exact Test for Count Data
+# data: table(labelRF, labelEuclid)
+# p-value = 1.216e-15
 ## Define a new clustering label based on labelRF and labelEuclid
 ## labelNew=1, if labelRF=1 and labelEuclid=1
 ## labelNew=2, if labelRF=1 and labelEuclid=2
@@ -134,7 +150,4 @@ plot(fit1, conf.int=F,col= unique(labelNew), lty=1:4, xlab="Time to death
 
 
 #THE END
-
-
-
 
