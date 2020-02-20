@@ -8,6 +8,8 @@ codes for master thesis
 * **LDA_tSNE_preprocessing.R** 実験2のみの前処理部分
 * **genome_analysis_3matrix_tSNE.R** 実験1の本体
 * **genome_analysis_LDA_tSNE.R** 実験2の本体
+* **appendix** RandomForestによるクラスタリング部分
+* **extension** 追加実験として, SNPに加えてINS/DELとDNPを加えたデータに対応
 
 # 動かす前にやること
 
