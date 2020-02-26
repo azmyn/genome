@@ -91,10 +91,11 @@ chrmlen = c(
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
 TSB = unique(d$Tumor_Sample_Barcode)
 mat = data.frame(matrix(
-  rep(NA, sum(chrmlen_1Mb) * length(TSB)),
+  rep(NA, sum(chrmlen_1Mb) * 1),
   ncol = sum(chrmlen_1Mb) ,
-  nrow = length(TSB)
+  nrow = 1
 ))
+
 label = unique(mutate(d, label = paste(Project_Code , Tumor_Sample_Barcode, sep =
                                          "_")) [, 9])
 TSB = unique(d$Tumor_Sample_Barcode)

@@ -1,5 +1,6 @@
 library(data.table)
 library(tictoc)
+library(randomForest)
 # ロード ---------------------------------------------------------------------
 setwd("~/Genome/PCAWG")
 
@@ -32,15 +33,15 @@ labels = fread(
 label = as.vector(as.matrix(labels[, 1]))
 type = as.vector(as.matrix(labels[, 2]))
 barcode = as.vector(as.matrix(labels[, 3]))
-donor = as.vector(as.matrix(labels[, 4]))
+# donor = as.vector(as.matrix(labels[, 4]))
 
 # -------------------------------------------------------------------------
+setwd("~/Dropbox/KU/shimolab_2019/genome/appendix")
+source("FunctionsRFclustering.txt")
 
-posRF = as.data.frame(pos_vec[,1:50])
-typeRF = as.data.frame(type_vec[,1:50])
-geneRF = as.data.frame(gene_vec[,1:30])
-attach(posRF)
-
+posRF = as.data.frame(t(pos_vec[,1:50]))
+typeRF = as.data.frame(t(type_vec[,1:50]))
+geneRF = as.data.frame(t(gene_vec[,1:30]))
 
 no.forests=25 # for the final version,you would want to increase this number to say 50 or 100
 no.trees=3000 

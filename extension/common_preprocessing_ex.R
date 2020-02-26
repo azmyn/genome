@@ -31,6 +31,10 @@ comp <- function(x) {
 }
 DNP_R = c("GT", "GG", "AG", "GA", "CA", "AA")
 DNP_COMP = c("AT", "CG", "GC", "TA")
+DNP_AT = c("CC", "GA", "CA")
+DNP_CG = c("GT", "TC", "TT")
+DNP_GC = c("AA", "AG", "CA")
+DNP_TA = c("CT", "GG", "GT")
 
 tic()
 for (i in 1:nrow(data)) {
@@ -55,8 +59,22 @@ for (i in 1:nrow(data)) {
         ref_a = data$Reference_Allele[i]
         tum_a = data$Tumor_Seq_Allele2[i]
       } else{
-        ref_a = data$Reference_Allele[i]
-        tum_a = paste0(comp(str_sub(data$Tumor_Seq_Allele2[i], 2, 2)), comp(str_sub(data$Tumor_Seq_Allele2[i], 1, 1)))
+        if(data$Reference_Allele[i] == "AT" && data$Tumor_Seq_Allele2[i]%in% DNP_AT){
+          ref_a = data$Reference_Allele[i]
+          tum_a = data$Tumor_Seq_Allele2[i]
+        }else if (data$Reference_Allele[i] == "CG" && data$Tumor_Seq_Allele2[i]%in% DNP_CG){
+          ref_a = data$Reference_Allele[i]
+          tum_a = data$Tumor_Seq_Allele2[i]
+        }else if (data$Reference_Allele[i] == "GC" && data$Tumor_Seq_Allele2[i]%in% DNP_GC){
+          ref_a = data$Reference_Allele[i]
+          tum_a = data$Tumor_Seq_Allele2[i]
+        }else if (data$Reference_Allele[i] == "TA" && data$Tumor_Seq_Allele2[i]%in% DNP_TA){
+          ref_a = data$Reference_Allele[i]
+          tum_a = data$Tumor_Seq_Allele2[i]
+        }else{
+          ref_a = data$Reference_Allele[i]
+          tum_a = paste0(comp(str_sub(data$Tumor_Seq_Allele2[i], 2, 2)), comp(str_sub(data$Tumor_Seq_Allele2[i], 1, 1)))
+        }
       }
     } else if (data$Reference_Allele[i] %in% DNP_R) {
       ref_a = paste0(comp(str_sub(data$Reference_Allele[i], 2, 2)), comp(str_sub(data$Reference_Allele[i], 1, 1)))
@@ -81,18 +99,22 @@ for (i in 1:nrow(data)) {
   # sample_chrm_mut_type[i] = toupper(m_type) #変異タイプごとに6種類
   sample_chrm_mut_pos[i] = data$Start_position[i] %/% 1000000 # 1Mで割った商
 }
-print(nrow(sample_chrm_mut))
-print("個のサンプルと染色体ごとに集計完了")
 
 c = cbind(sample_chrm_mut, sample_chrm_mut_type, sample_chrm_mut_pos)
 colnames(c) = c("Mutations", "Mut_type", "Pos_1Mb")
 
-toc() #だいたい10000秒ぐらい
+toc() #だいたい6500秒ぐらい
 
-d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 5, 9, 11:16)]
-fwrite(d, file = "mutation_small.csv", row.names = F) # 一度書き出し
+d = as.data.table(cbind(data, as.data.table(c)))[, c(1, 5, 9, 11:15)]
+fwrite(d, file = "mutation_small_ex.csv", row.names = F) # 一度書き出し
 
-# 行列作成(書き換えが必要) --------------------------------------------------------------------
+
+
+# やっぱりSNPとDNPだけにする --------------------------------------------------------
+
+d = filter(d, Variant_Type == "DNP"|Variant_Type == "SNP")
+
+# 行列作成 --------------------------------------------------------------------
 
 chrmlen = c(
   248956422,
@@ -123,14 +145,15 @@ chrmlen = c(
 )
 chrmlen_1Mb = ceiling(chrmlen / 1000000 + 1)
 TSB = unique(d$Tumor_Sample_Barcode)
+
 mat = data.frame(matrix(
-  rep(NA, sum(chrmlen_1Mb) * length(TSB)),
+  rep(NA, sum(chrmlen_1Mb) * 1),
   ncol = sum(chrmlen_1Mb) ,
-  nrow = length(TSB)
+  nrow = 1
 ))
+
 label = unique(mutate(d, label = paste(Project_Code , Tumor_Sample_Barcode, sep =
                                          "_")) [, 9])
-TSB = unique(d$Tumor_Sample_Barcode)
 type = c()
 Donor_ID = c()
 calc = function(x, y) {
@@ -179,73 +202,12 @@ for (i in 1:length(chrmlen_1Mb)) {
   }
 }
 colnames(mat) = cname
-fwrite(mat, file = "matrix.csv", row.names = F) # 一度書き出し
-fwrite(as.data.table(cbind(label, type, TSB, Donor_ID)), file = "PCAWG_matrix_labels.csv", row.names = F)
+fwrite(mat, file = "PCAWG_matrix_ex.csv", row.names = F) # 一度書き出し
+fwrite(as.data.table(cbind(label, type, TSB, Donor_ID)), file = "PCAWG_matrix_labels_ex.csv", row.names = F)
 
-toc() #10000秒ぐらい
+toc() #8000秒ぐらい
 
-# 変異別を書き直したぶん -----------------------------------------------------------------
-
-mutation = c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
-
-calc = function(x, y) {
-  if (x == 'X') {
-    x = 23
-  }
-  if (x == 'Y') {
-    x = 24
-  }
-  if (x == 1) {
-    return(y + 1)
-  } else{
-    x = as.numeric(x)
-    return (sum(chrmlen_1Mb[1:(x - 1)]) + y + 1)
-  }
-}
-d = as.matrix(d)
-for (i in 1:6) {
-  mat_mut = matrix(0, length(barcode), sum(chrmlen_1Mb))
-  tic(i)
-  d_s = subset(d, d[, 7] == mutation[i])
-  for (j in 1:length(barcode)) {
-    d_s_b = subset(d_s, d_s[, 3] == barcode[j])
-    for (k in 1:nrow(d_s_b)) {
-      c = calc(d_s_b[k, 1], d_s_b[k, 8])
-      if (is.na(mat_mut[j, c])) {
-        mat_mut[j, c] = 1
-      } else{
-        mat_mut[j, c] = mat_mut[j, c] + 1
-      }
-    }
-  }
-  filename = sprintf("PCAWG_matrix_6type_part%s.csv", i)
-  assign(paste("mat_mut_", i, sep = ""), mat_mut)
-  fwrite(mat_mut, filename, row.names = F)
-  toc(log = TRUE)
-}
-mat_all = cbind(mat_mut_1,
-                mat_mut_2,
-                mat_mut_3,
-                mat_mut_4,
-                mat_mut_5,
-                mat_mut_6)
-fwrite(mat_all, "PCAWG_matrix_6type.csv", row.names = F)
-
-x2 = matrix(rep(0, sum(nrow(mat)) * 6), nrow = nrow(mat))
-for (i in 1:length(barcode)) {
-  x2[i, ] = c(
-    sum(mat_all[i, c(1:3127)]),
-    sum(mat_all[i, c(3128:6254)]),
-    sum(mat_all[i, c(6255:9381)]),
-    sum(mat_all[i, c(9382:12508)]),
-    sum(mat_all[i, c(12509:15635)]),
-    sum(mat_all[i, c(15636:18762)])
-  )
-}
-fwrite(x2, "PCAWG_matrix_type.csv", row.names = F)
-
-
-# 文脈を含めた96パターン ------------------------------------------------------------
+# 文脈を含めたSNPとDNPの174パターン ------------------------------------------------------------
 
 mutation = c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G")
 nu = c("A", "C", "G", "T")
@@ -257,21 +219,24 @@ for (i in 1:6) {
     }
   }
 }
-mat_96 =  data.frame(matrix(rep(NA, 1), nrow = 1, ncol = 96))[numeric(0),]
+dnp =  filter(d, Variant_Type == "DNP")
+mutation174 = c (mutation96, sort(unique(dnp$Mutations)))
+
+mat_174 =  data.frame(matrix(rep(NA, 1), nrow = 1, ncol = 174))[numeric(0),]
 
 d = as.data.frame(d)
 tic()
 for (i in 1:length(TSB)) {
   sub = filter(d, d$Tumor_Sample_Barcode == TSB[i])
   for (j in 1:nrow(sub)) {
-    c = match(sub$Mutations[j], mutation96)
-    if (is.na(mat_96[i, c])) {
-      mat_96[i, c] = 1
+    c = match(sub$Mutations[j], mutation174)
+    if (is.na(mat_174[i, c])) {
+      mat_174[i, c] = 1
     } else{
-      mat_96[i, c] = mat_96[i, c] + 1
+      mat_174[i, c] = mat_174[i, c] + 1
     }
   }
 }
-mat_96[is.na(mat_96)] <- 0
-toc()
-fwrite(mat_96, "PCAWG_matrix_context_96type.csv", row.names = F)
+mat_174[is.na(mat_174)] <- 0
+toc() #3000秒ぐらい
+fwrite(mat_174, "PCAWG_matrix_context_174type_ex.csv", row.names = F)
